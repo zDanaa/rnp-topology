@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Output file names
 DOT_FILE="network_topology.dot"
 INTERFACES_FILE="network_interfaces.txt"

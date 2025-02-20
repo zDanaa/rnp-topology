@@ -1,3 +1,5 @@
+#!/bin/bash
+
 sorted_file="sorted_topology.dot"
 network_file="network_structure.dot"
 temp_file="sorted_topology_updated.dot"
