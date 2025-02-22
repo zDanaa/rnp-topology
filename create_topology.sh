@@ -1,10 +1,12 @@
-EXCLUDED_HOSTS = "s1, s2, s3"
-EXCLUDED_IPS = ("127.0.0.1", "127.0.1.1")
-EXCLUDE_IPV6 = true
-EXCLUDED_INTERFACE_ON_ALL_HOSTS = ("eth0")
+#!/bin/bash
+
+EXCLUDED_HOSTS="s1,s2,s3"
+EXCLUDED_IPS="127.0.0.1,127.0.1.1"
+EXCLUDE_IPV6=true
+EXCLUDED_INTERFACE_ON_ALL_HOSTS="eth0,lo"
 
 echo "Checking configured connections..."
-./check_configured_connections.sh EXCLUDED_HOSTS EXCLUDED_IPS EXCLUDE_IPV6
+./check_configured_connections.sh "$EXCLUDED_HOSTS" "$EXCLUDED_IPS" "$EXCLUDE_IPV6"
 if [ $? -eq 0 ]; then
     echo "Finished checking configured connections."
 else
@@ -13,7 +15,7 @@ else
 fi
 
 echo "Checking unconfigured connections..."
-./check_unconfigured_connections.sh EXCLUDED_HOSTS EXCLUDED_IPS EXCLUDE_IPV6 EXCLUDED_INTERFACE_ON_ALL_HOSTS
+./check_unconfigured_connections.sh "$EXCLUDED_HOSTS" "$EXCLUDED_IPS" "$EXCLUDE_IPV6" "$EXCLUDED_INTERFACE_ON_ALL_HOSTS"
 if [ $? -eq 0 ]; then
     echo "Finished checking unconfigured connections."
 else

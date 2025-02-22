@@ -1,16 +1,15 @@
 #!/bin/bash
 
+EXCLUDED_HOSTS=$1
+EXCLUDED_IPS=$2
+EXCLUDE_IPV6=$3
+EXCLUDED_INTERFACE_ON_ALL_HOSTS=$4
+
 echo "Started collecting network information."
 
-EXCLUDED_HOSTS = $1
-EXCLUDED_IPS = $2
-EXCLUDE_IPV6 = $3
-EXCLUDED_INTERFACE_ON_ALL_HOSTS = $4
-
-# Arrays for managing IP addresses and device names
 declare -A last_ips
 declare -A device_ips
-declare -A all_devices    # to store all hostnames that were not skipped
+declare -A all_devices  
 declare -A mac_db
 declare -A connections
 
@@ -36,19 +35,34 @@ activate_interface() {
     device_ips["$host"]+="$new_ip_raw "
 }
 
-is_ip_skipped() {
+# Function to check if an IP or hostname should be skipped
+should_skip_ip() {
     local ip=$1
     local hostname=$2
 
     # Skip certain hosts
     if [[ "$EXCLUDED_HOSTS" == *"$hostname"* ]] || [[ "$EXCLUDED_IPS" == *"$ip"* ]]; then
+        echo "Skipping $hostname ($ip)"
         return 0
     fi
 
     # Skip IPv6 addresses
     if [[ "$EXCLUDE_IPV6" == true ]] && [[ "$ip" == *:* ]]; then
+        echo "Skipping $hostname ($ip)"
         return 0
     fi
+    return 1
+}
+
+# Function to check if an interface should be excluded
+should_exclude_interface() {
+    local interface=$1
+
+    for excluded_interface in "${EXCLUDED_INTERFACE_ON_ALL_HOSTS[@]}"; do
+        if [[ "$excluded_interface" == "$interface" ]]; then
+            return 0
+        fi
+    done
 
     return 1
 }
@@ -62,7 +76,7 @@ while read -r line; do
     ip=$(awk '{print $1}' <<< "$line")
     hostname=$(awk '{print $2}' <<< "$line")
 
-    if is_ip_skipped "$ip" "$hostname"; then
+    if should_skip_ip "$ip" "$hostname"; then
         continue
     fi
 
@@ -74,12 +88,16 @@ while read -r line; do
         "ip -o link show 2>/dev/null | awk -F': ' '{print \$2}' | grep -E '^eth[0-9][0-9]*$'"
     )
 
-
     for interface in $interfaces; do
+        if should_exclude_interface "$interface"; then
+            continue
+        fi
+
         if [[ $interface =~ ^eth([1-9][0-9]*)$ ]]; then
             x=${BASH_REMATCH[1]}
             last_ips[$x]=$(( ${last_ips[$x]:-0} + 1 ))
             activate_interface "$hostname" "$interface" "$x" "${last_ips[$x]}"
+            echo "Added IP address 10.6.$x.${last_ips[$x]} to $hostname ($ip) on interface $interface"
         fi
     done
 done < /etc/hosts
@@ -120,7 +138,7 @@ while read -r line; do
     ip=$(awk '{print $1}' <<< "$line")
     hostname=$(awk '{print $2}' <<< "$line")
 
-    if is_ip_skipped "$ip" "$hostname"; then
+    if should_skip_ip "$ip" "$hostname"; then
         continue
     fi
 
@@ -143,7 +161,7 @@ while read -r line; do
     ip=$(awk '{print $1}' <<< "$line")
     hostname=$(awk '{print $2}' <<< "$line")
 
-    if is_ip_skipped "$ip" "$hostname"; then
+    if should_skip_ip "$ip" "$hostname"; then
         continue
     fi
 

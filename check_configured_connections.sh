@@ -1,10 +1,9 @@
 #!/bin/bash
 
-EXCLUDED_HOSTS = $1
-EXCLUDED_IPS = $2
-EXCLUDE_IPV6 = $3
+EXCLUDED_HOSTS=$1
+EXCLUDED_IPS=$2
+EXCLUDE_IPV6=$3
 
-# Output file names
 DOT_FILE="network_topology.dot"
 INTERFACES_FILE="network_interfaces.txt"
 TMP_FILE="edges.tmp"
@@ -89,11 +88,14 @@ while read -r line; do
     hostname=$(echo $line | awk '{print $2}')
 
     # Skip certain hosts
-    if [[ "$EXCLUDED_HOSTS" == *"$hostname"* ]] || [[ "$EXCLUDED_IPS" == *"$ip"* ]]; || then
+    if [[ $EXCLUDED_HOSTS == *"$hostname"* ]] || [[ $EXCLUDED_IPS == *"$ip"* ]]; then
+        echo "Skipping $hostname ($ip)"
         continue
     fi
+
     # Skip IPv6 addresses
-    if [[ "$EXCLUDE_IPV6" == true ]] && [[ "$ip" == *:* ]]; then
+    if [[ $EXCLUDE_IPV6 == true ]] && [[ $ip == *:* ]]; then
+        echo "Skipping $hostname ($ip)"
         continue
     fi
 
