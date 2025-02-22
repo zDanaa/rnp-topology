@@ -29,7 +29,7 @@ activate_interface() {
     device_ips["$host"]+="$new_ip_raw "
 }
 
-#Configure Interfaces
+# Configure Interfaces
 while read -r line; do
     # Skip comments and empty lines
     [[ $line =~ ^# ]] && continue
@@ -61,7 +61,7 @@ while read -r line; do
     done
 done < /etc/hosts
 
-#Check Connectivity
+# Check Connectivity
 for host in "${!device_ips[@]}"; do
     targets=()
     for other_host in "${!device_ips[@]}"; do
@@ -84,12 +84,12 @@ for host in "${!device_ips[@]}"; do
 done
 wait
 
-#Clear ARP Cache
+# Clear ARP Cache
 for host in "${!device_ips[@]}"; do
     ssh -n -o ConnectTimeout=5 "$host" "ip neigh flush nud failed 2>/dev/null" 2>/dev/null
 done
 
-#Collect MAC Addresses
+# Collect MAC Addresses
 declare -A mac_db
 while read -r line; do
     [[ $line =~ ^# ]] && continue
@@ -115,7 +115,7 @@ while read -r line; do
     done <<< "$macs"
 done < /etc/hosts
 
-#Analyze Network Connections
+# Analyze Network Connections
 declare -A connections
 while read -r line; do
     [[ $line =~ ^# ]] && continue
@@ -157,103 +157,7 @@ while read -r line; do
     done <<< "$neigh_entries"
 done < /etc/hosts
 
-#Generate Final Network Structure
-result_file="network_structure.dot"
-
-# Collect edges into a variable (so that they can be output in the desired order)
-edges_output=""
-
-declare -A processed
-for key in "${!connections[@]}"; do
-    # Format key: "A:B"
-    A=${key%%:*}
-    B=${key#*:}
-    if [[ "$A" > "$B" ]]; then
-        sorted_key="$B:$A"
-    else
-        sorted_key="$A:$B"
-    fi
-    if [[ -n "${processed[$sorted_key]}" ]]; then
-        continue
-    fi
-    processed[$sorted_key]=1
-
-    forward="${connections["$A:$B"]}"
-    backward="${connections["$B:$A"]}"
-
-    forward_conn=""
-    if [[ -n "$forward" ]]; then
-         IFS=',' read -ra fparts <<< "$forward"
-         for conn in "${fparts[@]}"; do
-              conn=$(echo "$conn" | sed 's/^[ \t]*//;s/[ \t]*$//')
-              f_local=${conn%%->*}
-              f_remote=${conn#*->}
-              if [[ "$f_local" == "eth0" || "$f_remote" == "eth0" ]]; then
-                 continue
-              fi
-              forward_conn="$conn"
-              break
-         done
-    fi
-
-    backward_conn=""
-    if [[ -n "$backward" ]]; then
-         IFS=',' read -ra bparts <<< "$backward"
-         for conn in "${bparts[@]}"; do
-              conn=$(echo "$conn" | sed 's/^[ \t]*//;s/[ \t]*$//')
-              b_local=${conn%%->*}
-              b_remote=${conn#*->}
-              if [[ "$b_local" == "eth0" || "$b_remote" == "eth0" ]]; then
-                 continue
-              fi
-              backward_conn="$conn"
-              break
-         done
-    fi
-
-    if [[ -n "$forward_conn" && -n "$backward_conn" ]]; then
-         A_iface=${forward_conn%%->*}
-         B_iface=${backward_conn%%->*}
-         edges_output+="  \"$A\" -> \"$B\" [label=\"$A_iface\", dir=forward];"$'\n'
-         edges_output+="  \"$B\" -> \"$A\" [label=\"$B_iface\", dir=forward];"$'\n'
-    elif [[ -n "$forward_conn" ]]; then
-         A_iface=${forward_conn%%->*}
-         B_iface=${forward_conn#*->}
-         edges_output+="  \"$A\" -> \"$B\" [label=\"$A_iface\", dir=forward];"$'\n'
-         edges_output+="  \"$B\" -> \"$A\" [label=\"$B_iface\", dir=forward];"$'\n'
-    elif [[ -n "$backward_conn" ]]; then
-         B_iface=${backward_conn%%->*}
-         A_iface=${backward_conn#*->}
-         edges_output+="  \"$B\" -> \"$A\" [label=\"$B_iface\", dir=forward];"$'\n'
-         edges_output+="  \"$A\" -> \"$B\" [label=\"$A_iface\", dir=forward];"$'\n'
-    fi
-done
-
-# Generate the final DOT file with header, node definitions, and edges
-{
-  echo "digraph network {"
-  echo "  bgcolor=\"lightgray\""
-  echo "  rankdir=LR"
-  echo "  node [fontname=\"Arial\", fontsize=14]"
-  echo "  edge [color=dark, fontname=\"Arial\", fontsize=12]"
-  echo ""
-
-  # Output the node definitions. Take all devices collected from /etc/hosts.
-  for device in "${!all_devices[@]}"; do
-    if [[ "$device" == router* ]]; then
-      style="style=filled, fillcolor=steelblue, shape=rect"
-    elif [[ "$device" == pc* ]]; then
-      style="style=filled, fillcolor=lightyellow, shape=ellipse"
-    else
-      style="style=filled, fillcolor=white, shape=ellipse"
-    fi
-    echo "  \"$device\" [label=\"$device\", $style];"
-  done | sort
-
-  echo ""
-  # Output the edges
-  echo "$edges_output"
-  echo "}"
-} > "$result_file"
+# Call the dot file generator script
+./generate_dot_file.sh "network_topology.dot" "network_interfaces.txt" "new_topology.dot" "sorted_topology.dot"
 
 echo "Finished collecting network information."
