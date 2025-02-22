@@ -40,7 +40,7 @@ def get_hosts_from_ip_route(host):
             hosts.append(ip)
     return hosts
 
-def get_hosts_from_arp_scan(host, interface="eth0"):
+def get_hosts_from_arp_scan(host, interface):
     """Perform ARP scanning on a remote host"""
     result = ssh_command(host, f"arp-scan --interface={interface} --localnet")
     hosts = []
@@ -94,8 +94,10 @@ def collect_topology(subnets, exclude_hosts, exclude_ips, exclude_interfaces, ex
         ip_route_hosts = get_hosts_from_ip_route(host)
         print(f"Hosts from 'ip route' on {host}: {ip_route_hosts}")
 
-        arp_table_hosts = get_hosts_from_arp_scan(host)
-        print(f"Hosts from ARP table on {host}: {arp_table_hosts}")
+        arp_table_hosts = []
+        for interface in interfaces:
+            arp_table_hosts.extend(get_hosts_from_arp_scan(host, interface))
+            print(f"Hosts from ARP table on {host} {interface}: {arp_table_hosts}")
 
         traceroute_hosts = get_hosts_from_traceroute(host, hosts)
         print(f"Hosts from traceroute on {host}: {traceroute_hosts}")
@@ -130,7 +132,7 @@ def export_to_dot(topology, filename="topology.dot"):
 
 def main():
     parser = argparse.ArgumentParser(description="Network Topology Discovery")
-    parser.add_argument("--subnets", nargs="*", default=["192.168.0.0/28"], help="Subnets to scan using ping sweep")
+    parser.add_argument("--subnets", nargs="*", default=["192.168.0.0/27"], help="Subnets to scan using ping sweep")
     parser.add_argument("--exclude-hosts", nargs="*", default=["s1", "s2", "s3"], help="Hosts to exclude")
     parser.add_argument("--exclude-ips", nargs="*", default=["127.0.0.1", "127.0.1.1"], help="IPs to exclude")
     parser.add_argument("--exclude-interfaces", nargs="*", default=["lo"], help="Interfaces to exclude")
