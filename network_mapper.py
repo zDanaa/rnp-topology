@@ -115,33 +115,46 @@ def ping_sweep(subnet):
             discovered_hosts.append(str(ip))
     return discovered_hosts
 
+def process_host(host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips):
+    if host in exclude_hosts:
+        return None
+    if host in exclude_ips:
+        return None
+    if exclude_ipv6 and ":" in host:
+        return None
+    host_info = {
+        "name": get_host_name(host),
+        "interfaces": get_ip_address_per_interface(host),
+        "mac_addresses": get_mac_address_per_interface(host),
+        "ip_route_hosts": get_hosts_from_ip_route(host),
+    }
+    for interface, ip in host_info["interfaces"].items():
+        if interface not in exclude_interfaces:
+            host_info["arp_scan_hosts"] = get_hosts_from_arp_scan(host, interface)
+
+    # Collect all IP addresses from all hosts
+    all_ips.update(host_info["interfaces"].values())
+    for interface, ip in host_info["arp_scan_hosts"].items():
+        all_ips.update(ip)
+    all_ips.update(host_info["ip_route_hosts"].values())
+
+    return host, host_info
+
 def collect_topology(subnets, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6):
     all_ips = set()
     hosts = {}
-    for subnet in subnets:
-        discovered_hosts = ping_sweep(subnet)
-        for host in discovered_hosts:
-            if host in exclude_hosts:
-                continue
-            if host in exclude_ips:
-                continue
-            if exclude_ipv6 and ":" in host:
-                continue
-            hosts[host] = {
-                "name": get_host_name(host),
-                "interfaces": get_ip_address_per_interface(host),
-                "mac_addresses": get_mac_address_per_interface(host),
-                "ip_route_hosts": get_hosts_from_ip_route(host),
-            }
-            for interface, ip in hosts[host]["interfaces"].items():
-                if interface not in exclude_interfaces:
-                    hosts[host]["arp_scan_hosts"] = get_hosts_from_arp_scan(host, interface)
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for subnet in subnets:
+            discovered_hosts = ping_sweep(subnet)
+            for host in discovered_hosts:
+                futures.append(executor.submit(process_host, host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips))
 
-            # Collect all IP addresses from all hosts
-            all_ips.update(hosts[host]["interfaces"].values())
-            for interface, ip in hosts[host]["arp_scan_hosts"].items():
-                all_ips.update(ip)
-            all_ips.update(hosts[host]["ip_route_hosts"].values())   
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                host, host_info = result
+                hosts[host] = host_info
 
     # Traceroute to all ips for every interface. Stop searching on an interface if a first hop is found.
     # Mark the first hop as a connection and continue to the next interface.
