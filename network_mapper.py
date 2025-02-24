@@ -4,6 +4,8 @@ import argparse
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+import graphviz
+
 def run_command(command):
     try:
         print(f"Running command: {command}")
@@ -122,12 +124,15 @@ def process_host(host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_i
         return None
     if exclude_ipv6 and ":" in host:
         return None
+    print(f"Processing host {host}")
+    print(f"Getting local info for host {host}")
     host_info = {
         "name": get_host_name(host),
         "interfaces": get_ip_address_per_interface(host),
         "mac_addresses": get_mac_address_per_interface(host),
         "ip_route_hosts": get_hosts_from_ip_route(host),
     }
+    print(f"ARP scanning for host {host}")
     for interface, ip in host_info["interfaces"].items():
         if interface not in exclude_interfaces:
             host_info["arp_scan_hosts"] = get_hosts_from_arp_scan(host, interface)
@@ -146,6 +151,7 @@ def collect_topology(subnets, exclude_hosts, exclude_ips, exclude_interfaces, ex
     with ThreadPoolExecutor() as executor:
         futures = []
         for subnet in subnets:
+            print(f"Scanning subnet {subnet}")
             discovered_hosts = ping_sweep(subnet)
             for host in discovered_hosts:
                 futures.append(executor.submit(process_host, host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips))
@@ -161,8 +167,7 @@ def collect_topology(subnets, exclude_hosts, exclude_ips, exclude_interfaces, ex
     with ThreadPoolExecutor() as executor:
         futures = []
         for host in hosts:
-            for interface, ip in hosts[host]["interfaces"].items():
-                futures.append(executor.submit(traceroute_for_interface, host, interface, all_ips, hosts))
+            futures.append(executor.submit(traceroute_for_host, host, all_ips, hosts))
 
         for future in as_completed(futures):
             future.result()
@@ -170,6 +175,15 @@ def collect_topology(subnets, exclude_hosts, exclude_ips, exclude_interfaces, ex
     print(f"Discovered hosts: {hosts}")
     print(json.dumps(hosts, indent=4))
     return hosts
+
+def traceroute_for_host(host, all_ips, hosts):
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for interface, ip in hosts[host]["interfaces"].items():
+            futures.append(executor.submit(traceroute_for_interface, host, interface, all_ips, hosts))
+
+        for future in as_completed(futures):
+            future.result()
 
 def traceroute_for_interface(host, interface, all_ips, hosts):
     host_ips = hosts[host]["interfaces"].values()
@@ -179,17 +193,47 @@ def traceroute_for_interface(host, interface, all_ips, hosts):
             print(f"Skipping traceroute because {target} is {host}")
             continue
         first_hop = get_first_traceroute_hop(host, interface, target)
-        if first_hop:
+        if first_hop and first_hop not in host_ips:
             print(f"Found first hop {first_hop} from {host} to {target} via {interface}")
             hosts[host].setdefault("connections", {})[interface] = first_hop
             break  # Break out of the inner loop and continue with the next interface
+
+def reduce_network_data(network_data):
+    # Create a mapping from hostname to its interface IP addresses
+    host_to_ips = {data["name"]: list(data["interfaces"].values()) for data in network_data.values()}
+    ips_to_host = {ip: host for host, ips in host_to_ips.items() for ip in ips}
+    reduced_data = {}
+    for ip, data in network_data.items():
+        connections = {}
+        for interface, connection_ip in data.get("connections", {}).items():
+            connections[interface] = ips_to_host.get(connection_ip, connection_ip)
+        reduced_data[data["name"]] = {
+            "connections": connections
+        }
+    return reduced_data
+
+def drop_eth0(network_data):
+    for data in network_data.values():
+        data["connections"].pop("eth0", None)
+
+def generate_dot_graph(network_data):
+    dot = graphviz.Digraph(format="dot")
+    edges = set()
+    
+    for node, data in network_data.items():
+        for interface, connection in data["connections"].items():
+            if (node, connection) not in edges:
+                dot.edge(node, connection, label=interface)
+                edges.add((node, connection))
+    
+    print(dot.source)
 
 def main():
     parser = argparse.ArgumentParser(description="Network Topology Discovery")
     parser.add_argument("--subnets", nargs="*", default=["192.168.0.0/27"], help="Subnets to scan using ping sweep")
     parser.add_argument("--exclude-hosts", nargs="*", default=["s1", "s2", "s3"], help="Hosts to exclude")
     parser.add_argument("--exclude-ips", nargs="*", default=["127.0.0.1", "127.0.1.1"], help="IPs to exclude")
-    parser.add_argument("--exclude-interfaces", nargs="*", default=["lo"], help="Interfaces to exclude")
+    parser.add_argument("--exclude-interfaces", nargs="*", default=["lo"], help="Interfaces to exclude from scanning")
     parser.add_argument("--exclude-ipv6", action="store_true", help="Exclude IPv6 addresses")
     parser.add_argument("--output-dot", default="topology.dot", help="Export topology to .dot file")
     parser.add_argument("--verbose", action="store_false", help="Enable verbose output")
@@ -203,10 +247,8 @@ def main():
         exclude_ipv6=args.exclude_ipv6,
     )
 
-    #generate_dot_file(topology)
-    
-    #export_to_dot(topology, args.output_dot)
-    #print(json.dumps(topology, indent=4))
+    drop_eth0(topology)
+    generate_dot_graph(reduce_network_data(topology))
     
 if __name__ == "__main__":
     main()
