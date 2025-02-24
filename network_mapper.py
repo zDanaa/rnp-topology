@@ -240,11 +240,11 @@ def reduce_network_data(network_data):
 def remove_interfaces_from_graph(network_data, interfaces_to_drop):
     for data in network_data.values():
         for interface in interfaces_to_drop:
-            data["interfaces"].pop(interface, None)
             data["mac_addresses"].pop(interface, None)
             data["ip_route_hosts"].pop(interface, None)
             data["arp_scan_hosts"].pop(interface, None)
             data["connections"].pop(interface, None)
+            data["ip_neigh_hosts"].pop(interface, None)
 
 def generate_dot_graph(network_data, output_dot, output_png):
     dot = graphviz.Digraph(format="png")
