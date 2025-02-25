@@ -1,19 +1,33 @@
 digraph {
-	bgcolor=gray overlap=false rankdir=LR
-	{
-		rank=same
-		pc2 [fillcolor=lightyellow fontname=Arial shape=ellipse style=filled]
-		pc3 [fillcolor=lightyellow fontname=Arial shape=ellipse style=filled]
-		pc1 [fillcolor=lightyellow fontname=Arial shape=ellipse style=filled]
-	}
-	Gruppe06 -> "10.153.211.253" [label=ens18 arrowhead=normal color=black fontsize=10 minlen=2]
-	Gruppe06 -> router3 [label=br_man arrowhead=normal color=black fontsize=10 minlen=2]
-	router3 [fillcolor=steelblue fontname=Arial shape=box style=filled]
-	router4 [fillcolor=steelblue fontname=Arial shape=box style=filled]
-	router4 -> router2 [label=eth2 arrowhead=normal color=black fontsize=10 minlen=2]
-	router4 -> pc3 [label=eth0 arrowhead=normal color=black fontsize=10 minlen=2]
-	router4 -> router3 [label=eth3 arrowhead=normal color=black fontsize=10 minlen=2]
-	router4 -> router1 [label=eth1 arrowhead=normal color=black fontsize=10 minlen=2]
-	router2 [fillcolor=steelblue fontname=Arial shape=box style=filled]
-	router1 [fillcolor=steelblue fontname=Arial shape=box style=filled]
+        bgcolor=white overlap=false rankdir=LR
+        {
+                rank=same
+                pc3 [fillcolor=pink fontname=Arial shape=ellipse style=filled]
+                pc2 [fillcolor=pink fontname=Arial shape=ellipse style=filled]
+                pc1 [fillcolor=pink fontname=Arial shape=ellipse style=filled]
+        }
+        Gruppe06 -> "10.153.211.253" [label=ens18 arrowhead=normal color=black fontsize=10 minlen=2]
+        Gruppe06 -> router3 [label=br_man arrowhead=normal color=black fontsize=10 minlen=2]
+        pc3 -> router3 [label=eth1 arrowhead=normal color=black fontsize=10 minlen=2]
+        router4 [fillcolor=lightblue fontname=Arial shape=box style=filled]
+        router4 -> router2 [label=eth2 arrowhead=normal color=black fontsize=10 minlen=2]
+        router4 -> router1 [label=eth1 arrowhead=normal color=black fontsize=10 minlen=2]
+        router4 -> router3 [label=eth3 arrowhead=normal color=black fontsize=10 minlen=2]
+        router3 [fillcolor=lightblue fontname=Arial shape=box style=filled]
+        router3 -> router4 [label=eth4 arrowhead=normal color=black fontsize=10 minlen=2]
+        router3 -> router2 [label=eth3 arrowhead=normal color=black fontsize=10 minlen=2]
+        router3 -> router1 [label=eth2 arrowhead=normal color=black fontsize=10 minlen=2]
+        router3 -> pc3 [label=eth1 arrowhead=normal color=black fontsize=10 minlen=2]
+        router2 [fillcolor=lightblue fontname=Arial shape=box style=filled]
+        router2 -> router4 [label=eth4 arrowhead=normal color=black fontsize=10 minlen=2]
+        router2 -> pc2 [label=eth1 arrowhead=normal color=black fontsize=10 minlen=2]
+        router2 -> router3 [label=eth3 arrowhead=normal color=black fontsize=10 minlen=2]
+        router2 -> router1 [label=eth2 arrowhead=normal color=black fontsize=10 minlen=2]
+        pc2 -> router2 [label=eth1 arrowhead=normal color=black fontsize=10 minlen=2]
+        pc1 -> router1 [label=eth1 arrowhead=normal color=black fontsize=10 minlen=2]
+        router1 [fillcolor=lightblue fontname=Arial shape=box style=filled]
+        router1 -> router4 [label=eth4 arrowhead=normal color=black fontsize=10 minlen=2]
+        router1 -> router2 [label=eth2 arrowhead=normal color=black fontsize=10 minlen=2]
+        router1 -> router3 [label=eth3 arrowhead=normal color=black fontsize=10 minlen=2]
+        router1 -> pc1 [label=eth1 arrowhead=normal color=black fontsize=10 minlen=2]
 }
