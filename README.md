@@ -1,5 +1,7 @@
 # Network Topology Discovery
 
+![Network Topology](topology.svg)
+
 ## Dependencies
 
 - `graphviz`
