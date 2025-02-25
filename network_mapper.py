@@ -300,18 +300,18 @@ def remove_interfaces_from_graph(network_data, interfaces_to_drop):
 
 def generate_dot_graph(network_data, output_dot, output_png):
     dot = graphviz.Digraph(format="png")
-    dot.attr(rankdir="LR", bgcolor="gray", overlap="false")
+    dot.attr(rankdir="LR", bgcolor="white", overlap="false")
     edges = set()
     
     with dot.subgraph() as s:
         s.attr(rank="same")
         for node, data in network_data.items():
             if "pc" in node:
-                s.node(node, shape="ellipse", style="filled", fillcolor="lightyellow", fontname="Arial")
+                s.node(node, shape="ellipse", style="filled", fillcolor="pink", fontname="Arial")
     
     for node, data in network_data.items():
         if "router" in node:
-            dot.node(node, shape="box", style="filled", fillcolor="steelblue", fontname="Arial")
+            dot.node(node, shape="box", style="filled", fillcolor="lightblue", fontname="Arial")
         for interface, connection in data["connections"].items():
             if (node, connection) not in edges:
                 dot.edge(node, connection, label=interface, fontsize="10", color="black", arrowhead="normal", minlen="2")
