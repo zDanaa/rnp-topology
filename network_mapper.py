@@ -1,20 +1,16 @@
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import ipaddress
 import json
 import subprocess
 import graphviz
-
-unauthorized_ips = set()
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def run_command(command):
     try:
-        print(f"Running command: {command}")
+        if not verbose: print(f"Running command: {command}")
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
         return result.stdout.strip()
     except Exception as e:
-        print(f"Error running command {command}: {e}")
+        if not verbose: print(f"Error running command {command}: {e}")
         return ""
 
 def ssh_command(host, command, username="root", password=None):
@@ -23,7 +19,7 @@ def ssh_command(host, command, username="root", password=None):
     output = run_command(ssh_command)
 
     if "Permission denied" in output or "Connection refused" in output:
-        print(f"Unauthorized access to {host}. Adding to unauthorized IPs.")
+        if not verbose: print(f"Unauthorized access to {host}. Adding to unauthorized IPs.")
         unauthorized_ips.add(host)
 
     return output
@@ -111,7 +107,7 @@ def get_hosts_from_ip_neigh(host=None, interface=None, local=False):
             ip = parts[0]
             if ":" not in ip:
                 hosts.setdefault(interface, []).append(ip)
-    print(f"IP neigh for {host} on {interface}: {hosts}")
+    if not verbose: print(f"IP neigh for {host} on {interface}: {hosts}")
     return hosts
 
 def process_host(host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips, local):
@@ -121,8 +117,7 @@ def process_host(host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_i
         return None
     if exclude_ipv6 and ":" in host:
         return None
-    print(f"Processing host {host}")
-    print(f"Getting local info for host {host}")
+    if not verbose: print(f"Processing host {host}")
     host_info = {
         "name": get_host_name(host, local),
         "interfaces": get_ip_address_per_interface(host, exclude_interfaces, local),
@@ -150,7 +145,7 @@ def get_hosts_from_traceroute(host, interface, target, local=False):
     hosts = {}
     command = f"traceroute -n -i {interface} {target}"
     result = run_command(command) if local else ssh_command(host, command)
-    print(f"Traceroute from {host} to {target} via {interface}: {result}")
+    if not verbose: print(f"Traceroute from {host} to {target} via {interface}: {result}")
     for line in result.splitlines():
         parts = line.split()
         if parts[0].isdigit():
@@ -187,7 +182,7 @@ def traceroute_for_interface(host, interface, all_ips, hosts, local=False):
     host_ips_list = list(host_ips)
     for target in all_ips:
         if target in host_ips_list:
-            print(f"Skipping traceroute because target is host")
+            if not verbose: print(f"Skipping traceroute because target is host")
             continue
         first_hop = get_first_traceroute_hop(host, interface, target, local)
         if first_hop and first_hop not in host_ips:
@@ -258,7 +253,7 @@ def collect_topology(exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv
         if not new_hosts_to_process:
             break
 
-    print(json.dumps(topology, indent=4))
+    if not verbose: print(json.dumps(topology, indent=4))
     print(f"Saving topology to {output_json}")
     with open(output_json, "w") as f:
         json.dump(topology, f, indent=4)
@@ -317,7 +312,7 @@ def generate_dot_graph(network_data, output_dot, output_png):
                 dot.edge(node, connection, label=interface, fontsize="10", color="black", arrowhead="normal", minlen="2")
                 edges.add((node, connection))
     
-    print(dot.source)
+    if not verbose: print(dot.source)
     print(f"Saving graph to {output_dot}")
     with open(output_dot, "w") as f:
         f.write(dot.source)
@@ -336,9 +331,15 @@ def main():
     parser.add_argument("--output-json", default="topology.json", help="Export topology to JSON file")
     parser.add_argument("--output-dot", default="topology.dot", help="Export topology to .dot file")
     parser.add_argument("--output-png", default="network_graph.png", help="Export topology to PNG file")
-    parser.add_argument("--verbose", action="store_false", help="Enable verbose output")
+    parser.add_argument("--verbose", default="False", action="store_false", help="Enable verbose output")
     args = parser.parse_args()
     
+    global verbose
+    verbose = args.verbose
+
+    global unauthorized_ips
+    unauthorized_ips = set()
+
     topology = collect_topology(
         exclude_hosts=args.exclude_hosts,
         exclude_ips=args.exclude_ips,
