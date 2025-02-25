@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="809pt" height="428pt" viewBox="0.00 0.00 809.37 428.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 424)">
+<polygon fill="white" stroke="none" points="-4,4 -4,-424 805.37,-424 805.37,4 -4,4"/>
+<!-- pc3 -->
+<g id="node1" class="node">
+<title>pc3</title>
+<ellipse fill="pink" stroke="black" cx="49.65" cy="-81" rx="27" ry="18"/>
+<text text-anchor="middle" x="49.65" y="-76.8" font-family="Arial" font-size="14.00">pc3</text>
+</g>
+<!-- router3 -->
+<g id="node6" class="node">
+<title>router3</title>
+<polygon fill="lightblue" stroke="black" points="305.43,-123 245.07,-123 245.07,-87 305.43,-87 305.43,-123"/>
+<text text-anchor="middle" x="275.25" y="-100.8" font-family="Arial" font-size="14.00">router3</text>
+</g>
+<!-- pc3&#45;&gt;router3 -->
+<g id="edge3" class="edge">
+<title>pc3-&gt;router3</title>
+<path fill="none" stroke="black" d="M76.45,-77.2C93.42,-74.89 116.13,-72.17 136.31,-71 149.86,-70.21 153.44,-68.93 166.86,-71 189.58,-74.51 214.09,-81.97 233.94,-89.01"/>
+<polygon fill="black" stroke="black" points="232.73,-92.29 243.33,-92.44 235.14,-85.72 232.73,-92.29"/>
+<text text-anchor="middle" x="151.58" y="-74" font-family="Times,serif" font-size="10.00">eth1</text>
+</g>
+<!-- pc2 -->
+<g id="node2" class="node">
+<title>pc2</title>
+<ellipse fill="pink" stroke="black" cx="49.65" cy="-374" rx="27" ry="18"/>
+<text text-anchor="middle" x="49.65" y="-369.8" font-family="Arial" font-size="14.00">pc2</text>
+</g>
+<!-- router2 -->
+<g id="node8" class="node">
+<title>router2</title>
+<polygon fill="lightblue" stroke="black" points="649.79,-222 589.43,-222 589.43,-186 649.79,-186 649.79,-222"/>
+<text text-anchor="middle" x="619.61" y="-199.8" font-family="Arial" font-size="14.00">router2</text>
+</g>
+<!-- pc2&#45;&gt;router2 -->
+<g id="edge15" class="edge">
+<title>pc2-&gt;router2</title>
+<path fill="none" stroke="black" d="M75.57,-368.55C95.7,-364.62 124.83,-360 150.58,-360 150.58,-360 150.58,-360 544.83,-360 602.17,-360 561.32,-290.11 590.5,-232.29"/>
+<polygon fill="black" stroke="black" points="593.49,-234.09 595.53,-223.69 587.45,-230.55 593.49,-234.09"/>
+<text text-anchor="middle" x="392.25" y="-363" font-family="Times,serif" font-size="10.00">eth1</text>
+</g>
+<!-- pc1 -->
+<g id="node3" class="node">
+<title>pc1</title>
+<ellipse fill="pink" stroke="black" cx="49.65" cy="-300" rx="27" ry="18"/>
+<text text-anchor="middle" x="49.65" y="-295.8" font-family="Arial" font-size="14.00">pc1</text>
+</g>
+<!-- router1 -->
+<g id="node9" class="node">
+<title>router1</title>
+<polygon fill="lightblue" stroke="black" points="498.22,-269 437.86,-269 437.86,-233 498.22,-233 498.22,-269"/>
+<text text-anchor="middle" x="468.04" y="-246.8" font-family="Arial" font-size="14.00">router1</text>
+</g>
+<!-- pc1&#45;&gt;router1 -->
+<g id="edge16" class="edge">
+<title>pc1-&gt;router1</title>
+<path fill="none" stroke="black" d="M71.02,-288.68C90.75,-278.79 121.81,-266 150.58,-266 150.58,-266 150.58,-266 393.25,-266 404.1,-266 415.67,-264.42 426.35,-262.29"/>
+<polygon fill="black" stroke="black" points="427.04,-265.73 436.04,-260.14 425.52,-258.89 427.04,-265.73"/>
+<text text-anchor="middle" x="275.25" y="-269" font-family="Times,serif" font-size="10.00">eth1</text>
+</g>
+<!-- Gruppe06 -->
+<g id="node4" class="node">
+<title>Gruppe06</title>
+<ellipse fill="none" stroke="black" cx="49.65" cy="-177" rx="49.65" ry="18"/>
+<text text-anchor="middle" x="49.65" y="-172.8" font-family="Times,serif" font-size="14.00">Gruppe06</text>
+</g>
+<!-- 10.153.211.253 -->
+<g id="node5" class="node">
+<title>10.153.211.253</title>
+<ellipse fill="none" stroke="black" cx="275.25" cy="-201" rx="71.39" ry="18"/>
+<text text-anchor="middle" x="275.25" y="-196.8" font-family="Times,serif" font-size="14.00">10.153.211.253</text>
+</g>
+<!-- Gruppe06&#45;&gt;10.153.211.253 -->
+<g id="edge1" class="edge">
+<title>Gruppe06-&gt;10.153.211.253</title>
+<path fill="none" stroke="black" d="M97.8,-182.06C126.81,-185.17 164.66,-189.24 197.87,-192.8"/>
+<polygon fill="black" stroke="black" points="197.11,-196.24 207.43,-193.83 197.86,-189.28 197.11,-196.24"/>
+<text text-anchor="middle" x="151.58" y="-192.4" font-family="Times,serif" font-size="10.00">ens18</text>
+</g>
+<!-- Gruppe06&#45;&gt;router3 -->
+<g id="edge2" class="edge">
+<title>Gruppe06-&gt;router3</title>
+<path fill="none" stroke="black" d="M87.83,-165.03C128.21,-152.03 192.5,-131.33 234.03,-117.95"/>
+<polygon fill="black" stroke="black" points="234.96,-121.33 243.41,-114.93 232.82,-114.67 234.96,-121.33"/>
+<text text-anchor="middle" x="151.58" y="-152.33" font-family="Times,serif" font-size="10.00">br_man</text>
+</g>
+<!-- router3&#45;&gt;pc3 -->
+<g id="edge10" class="edge">
+<title>router3-&gt;pc3</title>
+<path fill="none" stroke="black" d="M244.79,-101.84C204.5,-97.51 132.2,-89.75 88.11,-85.02"/>
+<polygon fill="black" stroke="black" points="88.56,-81.55 78.25,-83.96 87.82,-88.51 88.56,-81.55"/>
+<text text-anchor="middle" x="151.58" y="-96.4" font-family="Times,serif" font-size="10.00">eth1</text>
+</g>
+<!-- router4 -->
+<g id="node7" class="node">
+<title>router4</title>
+<polygon fill="lightblue" stroke="black" points="801.37,-221 741.01,-221 741.01,-185 801.37,-185 801.37,-221"/>
+<text text-anchor="middle" x="771.19" y="-198.8" font-family="Arial" font-size="14.00">router4</text>
+</g>
+<!-- router3&#45;&gt;router4 -->
+<g id="edge7" class="edge">
+<title>router3-&gt;router4</title>
+<path fill="none" stroke="black" d="M298.01,-86.65C320.04,-69.99 355.82,-48 391.25,-48 391.25,-48 391.25,-48 696.4,-48 751.27,-48 765.38,-128.18 768.98,-173.2"/>
+<polygon fill="black" stroke="black" points="765.48,-173.35 769.63,-183.1 772.47,-172.89 765.48,-173.35"/>
+<text text-anchor="middle" x="543.83" y="-51" font-family="Times,serif" font-size="10.00">eth4</text>
+</g>
+<!-- router3&#45;&gt;router2 -->
+<g id="edge8" class="edge">
+<title>router3-&gt;router2</title>
+<path fill="none" stroke="black" d="M305.48,-100.65C328.68,-97.58 361.97,-94 391.25,-94 391.25,-94 391.25,-94 544.83,-94 583.91,-94 603.62,-142.49 612.46,-175.08"/>
+<polygon fill="black" stroke="black" points="608.96,-175.51 614.77,-184.37 615.75,-173.82 608.96,-175.51"/>
+<text text-anchor="middle" x="468.04" y="-97" font-family="Times,serif" font-size="10.00">eth3</text>
+</g>
+<!-- router3&#45;&gt;router1 -->
+<g id="edge9" class="edge">
+<title>router3-&gt;router1</title>
+<path fill="none" stroke="black" d="M304.65,-123.43C330.36,-140.44 368.98,-166.81 400.86,-192 413.85,-202.27 427.61,-214.32 439.2,-224.85"/>
+<polygon fill="black" stroke="black" points="436.74,-227.35 446.47,-231.53 441.47,-222.19 436.74,-227.35"/>
+<text text-anchor="middle" x="392.25" y="-195" font-family="Times,serif" font-size="10.00">eth2</text>
+</g>
+<!-- router4&#45;&gt;router3 -->
+<g id="edge6" class="edge">
+<title>router4-&gt;router3</title>
+<path fill="none" stroke="black" d="M767.55,-184.63C759.85,-134.66 735.49,0 696.4,0 391.25,0 391.25,0 391.25,0 345.59,0 310.12,-45.71 291.27,-76.81"/>
+<polygon fill="black" stroke="black" points="288.27,-75 286.28,-85.4 294.33,-78.51 288.27,-75"/>
+<text text-anchor="middle" x="543.83" y="-3" font-family="Times,serif" font-size="10.00">eth3</text>
+</g>
+<!-- router4&#45;&gt;router2 -->
+<g id="edge4" class="edge">
+<title>router4-&gt;router2</title>
+<path fill="none" stroke="black" d="M740.52,-196.51C724.62,-193.78 704.67,-191.52 686.79,-193 678.49,-193.69 669.67,-194.85 661.26,-196.16"/>
+<polygon fill="black" stroke="black" points="660.91,-192.67 651.62,-197.78 662.07,-199.58 660.91,-192.67"/>
+<text text-anchor="middle" x="695.4" y="-196" font-family="Times,serif" font-size="10.00">eth2</text>
+</g>
+<!-- router4&#45;&gt;router1 -->
+<g id="edge5" class="edge">
+<title>router4-&gt;router1</title>
+<path fill="none" stroke="black" d="M740.52,-215.86C734.78,-218.09 728.75,-220.25 723.01,-222 714.75,-224.51 712.51,-224.55 704.01,-226 618.83,-240.56 561.47,-247.03 517.22,-250 514.87,-250.16 512.46,-250.29 510.02,-250.41"/>
+<polygon fill="black" stroke="black" points="509.99,-246.91 500.13,-250.76 510.24,-253.9 509.99,-246.91"/>
+<text text-anchor="middle" x="619.61" y="-246.01" font-family="Times,serif" font-size="10.00">eth1</text>
+</g>
+<!-- router2&#45;&gt;pc2 -->
+<g id="edge12" class="edge">
+<title>router2-&gt;pc2</title>
+<path fill="none" stroke="black" d="M595.4,-222.35C593.08,-225.03 591.01,-227.93 589.43,-231 560.16,-287.97 596.06,-314.87 571.43,-374 564.06,-391.71 564.01,-408 544.83,-408 150.58,-408 150.58,-408 150.58,-408 126.42,-408 100.64,-398.98 81.32,-390.23"/>
+<polygon fill="black" stroke="black" points="82.92,-387.12 72.39,-385.97 79.91,-393.44 82.92,-387.12"/>
+<text text-anchor="middle" x="392.25" y="-411" font-family="Times,serif" font-size="10.00">eth1</text>
+</g>
+<!-- router2&#45;&gt;router3 -->
+<g id="edge13" class="edge">
+<title>router2-&gt;router3</title>
+<path fill="none" stroke="black" d="M589.08,-195.46C527.73,-177.72 386.43,-136.86 316.69,-116.69"/>
+<polygon fill="black" stroke="black" points="317.77,-113.36 307.19,-113.95 315.82,-120.09 317.77,-113.36"/>
+<text text-anchor="middle" x="468.04" y="-172.15" font-family="Times,serif" font-size="10.00">eth3</text>
+</g>
+<!-- router2&#45;&gt;router4 -->
+<g id="edge11" class="edge">
+<title>router2-&gt;router4</title>
+<path fill="none" stroke="black" d="M650.27,-207.63C656.07,-208.2 662.12,-208.7 667.79,-209 692.3,-210.3 698.51,-209.52 723.01,-208 725.05,-207.87 727.13,-207.72 729.24,-207.56"/>
+<polygon fill="black" stroke="black" points="729.37,-211.06 739.02,-206.68 728.74,-204.09 729.37,-211.06"/>
+<text text-anchor="middle" x="695.4" y="-212.66" font-family="Times,serif" font-size="10.00">eth4</text>
+</g>
+<!-- router2&#45;&gt;router1 -->
+<g id="edge14" class="edge">
+<title>router2-&gt;router1</title>
+<path fill="none" stroke="black" d="M589.12,-213.27C566.3,-220.44 534.44,-230.45 509.27,-238.36"/>
+<polygon fill="black" stroke="black" points="508.52,-234.92 500.03,-241.26 510.62,-241.6 508.52,-234.92"/>
+<text text-anchor="middle" x="543.83" y="-232.85" font-family="Times,serif" font-size="10.00">eth2</text>
+</g>
+<!-- router1&#45;&gt;pc1 -->
+<g id="edge20" class="edge">
+<title>router1-&gt;pc1</title>
+<path fill="none" stroke="black" d="M456.23,-269.22C443.66,-287.83 421.04,-314 393.25,-314 150.58,-314 150.58,-314 150.58,-314 129.26,-314 105.62,-310.83 86.69,-307.51"/>
+<polygon fill="black" stroke="black" points="87.53,-304.11 77.06,-305.73 86.25,-310.99 87.53,-304.11"/>
+<text text-anchor="middle" x="275.25" y="-317" font-family="Times,serif" font-size="10.00">eth1</text>
+</g>
+<!-- router1&#45;&gt;router3 -->
+<g id="edge19" class="edge">
+<title>router1-&gt;router3</title>
+<path fill="none" stroke="black" d="M437.46,-236.48C421.04,-227.9 400.57,-216.32 383.64,-204 367.17,-192.02 329.1,-156.1 303.01,-131"/>
+<polygon fill="black" stroke="black" points="305.72,-128.75 296.09,-124.32 300.86,-133.79 305.72,-128.75"/>
+<text text-anchor="middle" x="392.25" y="-218.39" font-family="Times,serif" font-size="10.00">eth3</text>
+</g>
+<!-- router1&#45;&gt;router4 -->
+<g id="edge17" class="edge">
+<title>router1-&gt;router4</title>
+<path fill="none" stroke="black" d="M477.99,-269.28C489.71,-290.32 512.43,-322 542.83,-322 542.83,-322 542.83,-322 696.4,-322 738.44,-322 757.36,-267.69 765.2,-232.45"/>
+<polygon fill="black" stroke="black" points="768.6,-233.31 767.16,-222.82 761.74,-231.92 768.6,-233.31"/>
+<text text-anchor="middle" x="619.61" y="-325" font-family="Times,serif" font-size="10.00">eth4</text>
+</g>
+<!-- router1&#45;&gt;router2 -->
+<g id="edge18" class="edge">
+<title>router1-&gt;router2</title>
+<path fill="none" stroke="black" d="M491.77,-232.5C503.91,-223.73 519.55,-214.07 535.22,-209 548.69,-204.64 564.03,-202.88 577.83,-202.37"/>
+<polygon fill="black" stroke="black" points="577.54,-205.88 587.49,-202.23 577.44,-198.88 577.54,-205.88"/>
+<text text-anchor="middle" x="543.83" y="-212" font-family="Times,serif" font-size="10.00">eth2</text>
+</g>
+</g>
+</svg>
