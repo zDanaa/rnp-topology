@@ -1,9 +1,12 @@
-import ipaddress
-import subprocess
 import argparse
-import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import ipaddress
+import json
+import subprocess
 import graphviz
+
+unauthorized_ips = set()
+
 
 def run_command(command):
     try:
@@ -16,37 +19,49 @@ def run_command(command):
 
 def ssh_command(host, command, username="root", password=None):
     """Execute command on a remote host via SSH using subprocess"""
-    ssh_command = f"ssh -o ConnectTimeout=5 {username}@{host} '{command}'"
-    return run_command(ssh_command)
+    ssh_command = f"ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no {username}@{host} '{command}'"
+    output = run_command(ssh_command)
 
-def get_host_name(host):
-    """Get hostname of a remote host"""
-    debian_hostname = ssh_command(host, "hostname")
-    if debian_hostname == "":
-        # OpenWRT hostname is stored in UCI system config
-        return ssh_command(host, "uci get system.@system[0].hostname")
-    return debian_hostname
+    if "Permission denied" in output or "Connection refused" in output:
+        print(f"Unauthorized access to {host}. Adding to unauthorized IPs.")
+        unauthorized_ips.add(host)
 
-def get_ip_address_per_interface(host, exclude_interfaces):
-    """Get IP address per interface on a remote host"""
-    result = ssh_command(host, "ip -4 addr show")
+    return output
+
+def get_host_name(host=None, local=False):
+    """Get hostname of a remote host or local machine"""
+    if local:
+        hostname = run_command("hostname")
+        if not hostname:
+            hostname = run_command("uci get system.@system[0].hostname")
+    else:
+        hostname = ssh_command(host, "hostname")
+        if not hostname:
+            hostname = ssh_command(host, "uci get system.@system[0].hostname")
+    return hostname
+
+def get_ip_address_per_interface(host=None, exclude_interfaces=[], local=False):
+    """Get IP address per interface on a remote host or local machine"""
+    command = "ip -4 addr show"
+    result = run_command(command) if local else ssh_command(host, command)
     interfaces = {}
     for line in result.splitlines():
         if "inet " in line:
             parts = line.split()
             interface = parts[-1]
             # Extract only the IP address, without the subnet mask
-            ip = parts[1].split('/')[0]  
+            ip = parts[1].split('/')[0]
             if interface not in exclude_interfaces:
                 interfaces[interface] = ip
     return interfaces
 
-def get_mac_address_per_interface(host, exclude_interfaces):
-    """Get MAC address per interface on a remote host"""
-    result = ssh_command(host, "ip link show")
+def get_mac_address_per_interface(host=None, exclude_interfaces=[], local=False):
+    """Get MAC address per interface on a remote host or local machine"""
+    command = "ip link show"
+    result = run_command(command) if local else ssh_command(host, command)
     interfaces = {}
     current_interface = None
-    
+
     for line in result.splitlines():
         if ": " in line:
             parts = line.split(": ")
@@ -60,9 +75,10 @@ def get_mac_address_per_interface(host, exclude_interfaces):
 
     return interfaces
 
-def get_hosts_from_ip_route(host, exclude_interfaces):
-    """Get hosts from the output of 'ip route' command"""
-    result = ssh_command(host, "ip route")
+def get_hosts_from_ip_route(host=None, exclude_interfaces=[], local=False):
+    """Get hosts from the output of 'ip route' command on a remote host or local machine"""
+    command = "ip route"
+    result = run_command(command) if local else ssh_command(host, command)
     hosts = {}
     for line in result.splitlines():
         parts = line.split()
@@ -73,9 +89,10 @@ def get_hosts_from_ip_route(host, exclude_interfaces):
                 hosts[interface] = ip
     return hosts
 
-def get_hosts_from_arp_scan(host, interface):
-    """Perform ARP scanning on a remote host"""
-    result = ssh_command(host, f"arp-scan --interface={interface} --localnet")
+def get_hosts_from_arp_scan(host=None, interface=None, local=False):
+    """Perform ARP scanning on a remote host or local machine"""
+    command = f"arp-scan --interface={interface} --localnet"
+    result = run_command(command) if local else ssh_command(host, command)
     hosts = {}
     for line in result.splitlines():
         parts = line.split()
@@ -83,30 +100,10 @@ def get_hosts_from_arp_scan(host, interface):
             hosts.setdefault(interface, []).append(parts[0])
     return hosts
 
-def get_hosts_from_traceroute(host, interface, target):
-    """Get hosts from the output of traceroute command"""
-    hosts = {}
-    result = ssh_command(host, f"traceroute -n -i {interface} {target}")
-    print(f"Traceroute from {host} to {target} via {interface}: {result}")
-    for line in result.splitlines():
-        parts = line.split()
-        if parts[0].isdigit():
-            ip = parts[1]
-            hosts.setdefault(interface, []).append(ip)
-    return hosts
-
-def get_first_traceroute_hop(host, interface, target):
-    """Get the first hop from the output of traceroute command"""
-    result = ssh_command(host, f"traceroute -n -m 1 -i {interface} {target}")
-    for line in result.splitlines():
-        parts = line.split()
-        if parts[0].isdigit() and parts[1] != "*":
-            return parts[1]
-    return None
-
-def get_hosts_from_ip_neigh(host, interface):
-    """Get hosts from the output of 'ip neigh' command"""
-    result = ssh_command(host, f"ip neigh show dev {interface}")
+def get_hosts_from_ip_neigh(host=None, interface=None, local=False):
+    """Get hosts from the output of 'ip neigh' command on a remote host or local machine"""
+    command = f"ip neigh show dev {interface}"
+    result = run_command(command) if local else ssh_command(host, command)
     hosts = {}
     for line in result.splitlines():
         parts = line.split()
@@ -114,43 +111,30 @@ def get_hosts_from_ip_neigh(host, interface):
             ip = parts[0]
             if ":" not in ip:
                 hosts.setdefault(interface, []).append(ip)
+    print(f"IP neigh for {host} on {interface}: {hosts}")
     return hosts
 
-def test_ping(host, interface, target):
-    """Test ping to a remote host"""
-    result = ssh_command(host, f"ping -c 1 -W 1 -I {interface} {target}")
-    return "1 packets transmitted, 1 received" in result
-
-def ping_sweep(subnet):
-    """Ping sweep to discover live hosts in the network"""
-    discovered_hosts = []
-    network = ipaddress.ip_network(subnet)
-    for ip in network.hosts():
-        result = run_command(f"ping -c 1 -W 1 {ip} | grep 'bytes from'")
-        if result:
-            discovered_hosts.append(str(ip))
-    return discovered_hosts
-
-def process_host(host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips):
+def process_host(host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips, local):
     if host in exclude_hosts:
         return None
-    if host in exclude_ips:
+    if host in exclude_ips or host in unauthorized_ips:
         return None
     if exclude_ipv6 and ":" in host:
         return None
     print(f"Processing host {host}")
     print(f"Getting local info for host {host}")
     host_info = {
-        "name": get_host_name(host),
-        "interfaces": get_ip_address_per_interface(host, exclude_interfaces),
-        "mac_addresses": get_mac_address_per_interface(host, exclude_interfaces),
-        "ip_route_hosts": get_hosts_from_ip_route(host, exclude_interfaces),
+        "name": get_host_name(host, local),
+        "interfaces": get_ip_address_per_interface(host, exclude_interfaces, local),
+        "mac_addresses": get_mac_address_per_interface(host, exclude_interfaces, local),
+        "ip_route_hosts": get_hosts_from_ip_route(host, exclude_interfaces, local),
+        "arp_scan_hosts": {},  
+        "ip_neigh_hosts": {}   
     }
-    print(f"ARP scanning for host {host}")
     for interface, ip in host_info["interfaces"].items():
         if interface not in exclude_interfaces:
-            host_info["arp_scan_hosts"] = get_hosts_from_arp_scan(host, interface)
-            host_info["ip_neigh_hosts"] =  get_hosts_from_ip_neigh(host, interface)
+            host_info["arp_scan_hosts"] = get_hosts_from_arp_scan(host, interface, local)
+            host_info["ip_neigh_hosts"] = get_hosts_from_ip_neigh(host, interface, local)
 
     all_ips.update(host_info["interfaces"].values())
     for interface, ip in host_info["arp_scan_hosts"].items():
@@ -161,8 +145,30 @@ def process_host(host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_i
 
     return host, host_info
 
+def get_hosts_from_traceroute(host, interface, target, local=False):
+    """Get hosts from the output of traceroute command"""
+    hosts = {}
+    command = f"traceroute -n -i {interface} {target}"
+    result = run_command(command) if local else ssh_command(host, command)
+    print(f"Traceroute from {host} to {target} via {interface}: {result}")
+    for line in result.splitlines():
+        parts = line.split()
+        if parts[0].isdigit():
+            ip = parts[1]
+            hosts.setdefault(interface, []).append(ip)
+    return hosts
 
-def traceroute_for_host(host, exclude_interfaces, all_ips, hosts):
+def get_first_traceroute_hop(host, interface, target, local=False):
+    """Get the first hop from the output of traceroute command"""
+    command = f"traceroute -n -m 1 -i {interface} {target}"
+    result = run_command(command) if local else ssh_command(host, command)
+    for line in result.splitlines():
+        parts = line.split()
+        if parts[0].isdigit() and parts[1] != "*":
+            return parts[1]
+    return None
+
+def traceroute_for_host(host, exclude_interfaces, all_ips, hosts, local=False):
     """ 
     Traceroute to all ips for every interface. Stop searching on an interface if a first hop is found. 
     Mark the first hop as a connection and continue to the next interface. 
@@ -171,56 +177,93 @@ def traceroute_for_host(host, exclude_interfaces, all_ips, hosts):
         futures = []
         for interface, ip in hosts[host]["interfaces"].items():
             if interface not in exclude_interfaces:
-                futures.append(executor.submit(traceroute_for_interface, host, interface, all_ips, hosts))
+                futures.append(executor.submit(traceroute_for_interface, host, interface, all_ips, hosts, local))
 
         for future in as_completed(futures):
             future.result()
 
-def traceroute_for_interface(host, interface, all_ips, hosts):
+def traceroute_for_interface(host, interface, all_ips, hosts, local=False):
     host_ips = hosts[host]["interfaces"].values()
     host_ips_list = list(host_ips)
     for target in all_ips:
         if target in host_ips_list:
-            print(f"Skipping traceroute because {target} is {host}")
+            print(f"Skipping traceroute because target is host")
             continue
-        first_hop = get_first_traceroute_hop(host, interface, target)
+        first_hop = get_first_traceroute_hop(host, interface, target, local)
         if first_hop and first_hop not in host_ips:
-            print(f"Found first hop {first_hop} from {host} to {target} via {interface}")
             hosts[host].setdefault("connections", {})[interface] = first_hop
             break  
 
-def collect_topology(subnets, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, output_json):
+def update_hosts_to_process(host_info, hosts_to_process):
+    """Update the hosts_to_process set based on the host_info dictionary"""
+    for interface in host_info["interfaces"]:
+        if host_info["ip_neigh_hosts"].get(interface):
+            hosts_to_process.update(host_info["ip_neigh_hosts"][interface])
+        if host_info["arp_scan_hosts"].get(interface):
+            hosts_to_process.update(host_info["arp_scan_hosts"][interface])
+        if host_info["ip_route_hosts"].get(interface):
+            hosts_to_process.add(host_info["ip_route_hosts"][interface])
+        
+def collect_topology(exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, output_json):
+    """Main method for topology discovery"""
     all_ips = set()
-    hosts = {}
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for subnet in subnets:
-            print(f"Scanning subnet {subnet}")
-            discovered_hosts = ping_sweep(subnet)
-            for host in discovered_hosts:
-                # Process each host in parallel
-                futures.append(executor.submit(process_host, host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips))
+    visited_ips = set()
+    topology = {}
+    hosts_to_process = set()
+     
+    result = process_host(None, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips, local=True)
+    if result:
+        host, host_info = result
+        topology[host] = host_info
+        update_hosts_to_process(host_info, hosts_to_process)
+    visited_ips.update(topology[host]["interfaces"].values())
 
-        for future in as_completed(futures):
-            result = future.result()
-            if result:
-                host, host_info = result
-                hosts[host] = host_info
+    for ip in exclude_ips:
+        hosts_to_process.discard(ip)
 
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for host in hosts:
-            # Traceroute to all IPs for every interface in parallel
-            futures.append(executor.submit(traceroute_for_host, host, exclude_interfaces, all_ips, hosts))
+    traceroute_for_host(None, exclude_interfaces, all_ips, topology, local=True)
+    
+    while visited_ips.union(unauthorized_ips) != all_ips:
+        new_hosts_to_process = set()
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for host in hosts_to_process - visited_ips - unauthorized_ips:
+                if host is not None:
+                    futures.append(executor.submit(process_host, host, exclude_hosts, exclude_ips, exclude_interfaces, exclude_ipv6, all_ips, local=False))
 
-        for future in as_completed(futures):
-            future.result()
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    host, host_info = result
+                    if host not in topology:
+                        topology[host] = host_info
+                        update_hosts_to_process(host_info, new_hosts_to_process)
+                        visited_ips.update(host_info["interfaces"].values())
 
-    print(json.dumps(hosts, indent=4))
+        hosts_to_process = new_hosts_to_process
+
+        for ip in exclude_ips:
+            hosts_to_process.discard(ip)
+
+        # Determine connections between hosts using traceroute
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for host in topology:
+                if host is not None and host in topology:
+                    futures.append(executor.submit(traceroute_for_host, host, exclude_interfaces, all_ips, topology))
+
+            for future in as_completed(futures):
+                future.result()
+
+        if not new_hosts_to_process:
+            break
+
+    print(json.dumps(topology, indent=4))
     print(f"Saving topology to {output_json}")
     with open(output_json, "w") as f:
-        json.dump(hosts, f, indent=4)
-    return hosts
+        json.dump(topology, f, indent=4)
+    
+    return topology
 
 def reduce_network_data(network_data):
     # Create a mapping from hostname to its interface IP addresses
@@ -239,12 +282,21 @@ def reduce_network_data(network_data):
 
 def remove_interfaces_from_graph(network_data, interfaces_to_drop):
     for data in network_data.values():
-        for interface in interfaces_to_drop:
-            data["mac_addresses"].pop(interface, None)
-            data["ip_route_hosts"].pop(interface, None)
-            data["arp_scan_hosts"].pop(interface, None)
-            data["connections"].pop(interface, None)
-            data["ip_neigh_hosts"].pop(interface, None)
+        if "mac_addresses" in data:
+            for interface in interfaces_to_drop:
+                data["mac_addresses"].pop(interface, None)
+        if "ip_route_hosts" in data:
+            for interface in interfaces_to_drop:
+                data["ip_route_hosts"].pop(interface, None)
+        if "arp_scan_hosts" in data:
+            for interface in interfaces_to_drop:
+                data["arp_scan_hosts"].pop(interface, None)
+        if "connections" in data:
+            for interface in interfaces_to_drop:
+                data["connections"].pop(interface, None)
+        if "ip_neigh_hosts" in data:
+            for interface in interfaces_to_drop:
+                data["ip_neigh_hosts"].pop(interface, None)
 
 def generate_dot_graph(network_data, output_dot, output_png):
     dot = graphviz.Digraph(format="png")
@@ -271,14 +323,13 @@ def generate_dot_graph(network_data, output_dot, output_png):
         f.write(dot.source)
     print(f"Saving graph as PNG to {output_png}")
     if (output_png.endswith(".png")):
-        output_png= output_png.replace(".png", "")
+        output_png = output_png.replace(".png", "")
     dot.render(output_png, format="png", cleanup=True)
 
 def main():
     parser = argparse.ArgumentParser(description="Network Topology Discovery")
-    parser.add_argument("--subnets", nargs="*", default=["192.168.0.0/27"], help="Subnets to scan using ping sweep")
     parser.add_argument("--exclude-hosts", nargs="*", default=["s1", "s2", "s3"], help="Hosts to exclude")
-    parser.add_argument("--exclude-ips", nargs="*", default=["127.0.0.1", "127.0.1.1"], help="IPs to exclude")
+    parser.add_argument("--exclude-ips", nargs="*", default=["127.0.0.1", "127.0.1.1", "192.168.27.2", "10.153.211.254"], help="IPs to exclude")
     parser.add_argument("--exclude-interfaces-scan", nargs="*", default=["lo"], help="Interfaces to exclude from scanning")
     parser.add_argument("--exclude-interfaces-graph", nargs="*", default=["lo", "eth0"], help="Interfaces to exclude from graph")
     parser.add_argument("--exclude-ipv6", action="store_true", help="Exclude IPv6 addresses")
@@ -289,7 +340,6 @@ def main():
     args = parser.parse_args()
     
     topology = collect_topology(
-        subnets=args.subnets,
         exclude_hosts=args.exclude_hosts,
         exclude_ips=args.exclude_ips,
         exclude_interfaces=args.exclude_interfaces_scan,
